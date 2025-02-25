@@ -1,0 +1,7 @@
+fpdf==1.7.2
+groq==0.18.0
+langchain==0.3.19
+pydantic==2.10.6
+Requests==2.32.3
+streamlit==1.42.2
+bandit==1.8.3

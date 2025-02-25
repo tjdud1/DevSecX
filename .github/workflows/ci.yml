@@ -1,0 +1,48 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * *'  # 매일 자정마다 실행 (필요에 따라 변경)
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      # 소스코드 체크아웃
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Python 환경 설정
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      # 의존성 설치
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 테스트 실행 (예: pytest)
+      - name: Run tests
+        run: |
+          pytest --maxfail=1 --disable-warnings -q
+
+      # Docker 이미지 빌드 단계 (Dockerfile이 저장소 루트에 있다고 가정)
+      - name: Build Docker Image
+        run: |
+          docker build -t my-docker-image .
+
+      # 빌드 결과를 아티팩트로 업로드 (선택 사항)
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist-files
+          path: dist/
