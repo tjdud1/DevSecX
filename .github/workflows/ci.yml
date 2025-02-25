@@ -39,12 +39,12 @@ jobs:
       # Docker 이미지 빌드 단계 (Dockerfile이 저장소 루트에 있다고 가정)
       - name: Build Docker Image
         run: |
-          docker build -t my-docker-image .
+          docker build -t my-docker-image . > docker-build
 
       # 빌드 결과를 아티팩트로 업로드 (선택 사항)
       - name: Upload artifact
         uses: actions/upload-artifact@v4.6.1
         with:
-          name: docker-build-log
-          path: docker_build.log
+          name: docker-build
+          path: docker-build
 
