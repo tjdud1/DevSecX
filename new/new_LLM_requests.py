@@ -9,7 +9,7 @@ class LMStudioLLM(LLM):
     api_key: Optional[str] = Field(None, description="LM Studio API 키 (필요 시)")
     model: str = Field("deepseek-r1-distill-qwen-7b", description="사용할 모델")
     temperature: float = Field(0.7, description="생성 온도")
-    max_tokens: int = Field(2048, description="최대 토큰 수") #max_tokens 제한 추가
+    max_tokens: int = Field(2048, description="최대 토큰 수") # max_tokens 제한 추가
     do_stream: bool = Field(False, description="스트리밍 여부")
 
     @property
@@ -34,14 +34,16 @@ class LMStudioLLM(LLM):
         if stop:
             data["stop"] = stop
 
-        response = requests.post(self.api_url, json=data, headers=headers)
-        response.raise_for_status()
-        result = response.json()
-
         try:
+            response = requests.post(self.api_url, json=data, headers=headers, timeout=30) # timeout 추가
+            response.raise_for_status()
+            result = response.json()
             return result["choices"][0]["message"]["content"]
-        except (KeyError, IndexError):
-            return result.get("text", "")
+        except requests.exceptions.RequestException as e:
+            return f"Error: {e}" # 에러 처리 추가
+        except (KeyError, IndexError) as e:
+            return f"Error parsing response: {e}" # 에러 처리 추가
+
 
     def invoke(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         return self._call(prompt, stop)
@@ -50,11 +52,10 @@ if __name__ == "__main__":
     file_path = 'vulcode.py'
     with open(file_path, 'r', encoding='utf-8') as file:
         file_contents = file.read()
-    api_url = "http://127.0.0.1:1234/v1/chat/completions" # 실제 API 주소로 변경 필요
+    api_url = "http://127.0.0.1:1234/v1/chat/completions" # 실제 API URL로 변경 필요
     llm = LMStudioLLM(api_url=api_url)
 
-    prompt = file_contents + \
-    '''Respond as shown in the example below
+    prompt = file_contents+'''Respond as shown in the example below
 
 [Report Writing Template Example]
 
@@ -82,21 +83,18 @@ Conclusion
 
 Report summary and recommendations for future remedial actions'''
 
-    print("입력:\n", prompt)
+    print("입력:\n", prompt)  
     output = llm.invoke(prompt)
+
     print("LM Studio 응답:", output)
 
 ```
 
 **수정 사항:**
 
-1. **`max_tokens` 제한 추가:**  API 호출 시 응답 토큰 수 제한을 추가했습니다.  `max_tokens` 값을 적절히 조정해야 합니다.  2048로 설정했지만, API 및 모델의 제약에 따라 변경해야 할 수 있습니다.  값이 너무 크면 API 요청이 실패할 수 있습니다.
-
-2. **에러 처리 개선:**  `response.raise_for_status()`를 추가하여 HTTP 에러(4xx 또는 5xx) 발생 시 예외를 발생시키도록 했습니다.  에러 원인을 파악하는데 도움이 됩니다.
-
-3. **API 주소 명시:**  주석으로 남겨둔  `api_url`에 실제 API 주소를 입력해야 합니다.
-
-4. **`prompt` 문자열 개선:** 여러 줄 문자열을 더 읽기 쉽게  `+` 연산자를 사용하여 연결했습니다.
+1. **`max_tokens` 제한 추가:**  API 호출 시 토큰 제한을 설정하여 응답 크기 제어 및 과도한 비용 발생 방지.  2048로 설정했지만,  API 및 사용 사례에 따라 조정해야 합니다.
+2. **에러 처리 강화:**  `requests` 라이브러리의 예외 처리를 추가하여 네트워크 오류 및 JSON 파싱 오류를 포착하고 사용자에게 에러 메시지를 제공하도록 개선했습니다.  `timeout`을 추가하여 응답 시간을 제한했습니다.
+3. **`api_url` 수정 주석 추가:**  실제 API 엔드포인트를 사용하도록 주석으로 명시했습니다.
 
 
-이 외에도  `vulcode.py` 파일의 내용에 따라 추가적인 보안 취약점이 존재할 수 있으며,  그에 따른 수정이 필요할 수 있습니다.  `vulcode.py` 파일 내용을 제공해주시면 더 정확한 분석 및 수정을 도와드릴 수 있습니다.  또한,  실제 LM Studio API 키를 설정해야 코드가 제대로 동작합니다.
+이 수정된 코드는 더욱 안정적이고 오류에 강하며,  API 응답 제한을 고려하여 과도한 비용 발생을 방지합니다.  `vulcode.py` 파일은 실제 코드 파일로 대체해야 합니다.  또한,  실제 LM Studio API 키와 엔드포인트로 변경해야 합니다.
