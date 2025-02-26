@@ -7,4 +7,3 @@
    git clone https://github.com/tjdud1/DevSecX.git
    cd DevSecX
    streamlit run app.py
-
