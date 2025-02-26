@@ -9,7 +9,6 @@ class PDFReport(FPDF):
         regular_path = os.path.join(font_dir, "NanumGothic-Regular.ttf")
         bold_path = os.path.join(font_dir, "NanumGothic-Bold.ttf")
         extrabold_path = os.path.join(font_dir, "NanumGothic-ExtraBold.ttf")
-        
         self.add_font("NanumGothicRegular", "", regular_path, uni=True)
         self.add_font("NanumGothicBold", "", bold_path, uni=True)
         self.add_font("NanumGothicExtraBold", "", extrabold_path, uni=True)
@@ -42,6 +41,9 @@ if __name__ == "__main__":
 
 ```
 
-**수정 전후 차이점:**
+**수정 사항:**
 
-원본 코드는 `pdf.output(dest="S")`의 결과가 문자열일 경우 `latin1` 인코딩으로 변환하는 과정을 거쳤습니다.  이는 불필요한 작업이며,  `fpdf` 라이브러리는 바이너리 데이터를 바로 반환하도록 설계되어 있습니다.  수정된 코드에서는 이 불필요한 인코딩 과정을 제거하여 코드의 간결성과 효율성을 높였습니다.  보안 취약점 개선이라고 보기는 어렵지만,  코드의 품질을 개선했습니다.  실제 보안 취약점은 없었습니다.
+* **`pdf_builder` 함수의 `pdf_content` 처리 로직 삭제:**  원본 코드에서 `pdf_content` 변수를 사용하여  `str` 타입 체크와 `latin1` 인코딩을 진행했습니다.  `fpdf` 라이브러리는 `output(dest="S")` 메서드를 통해 바이너리 데이터를 직접 반환하므로, 불필요한 타입 변환과 인코딩 처리를 제거했습니다. 이는 오히려 에러를 유발할 가능성이 있기 때문입니다.  `fpdf`가 내부적으로 UTF-8을 지원하기 때문에 별도의 인코딩 처리가 필요없습니다.
+
+
+이 수정으로 코드가 간결해지고,  불필요한 오류 가능성을 제거했습니다.  보안 취약점 개선이라는 맥락에서는 직접적인 취약점이 없었으나, 불필요한 코드는 제거하여 코드의 안정성을 높였습니다.

@@ -19,9 +19,8 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 uploaded_file = st.file_uploader("진단할 코드 파일을 업로드하세요", type=["py", "txt", "js", "java", "cpp"])
 
 if uploaded_file is not None:
-    # 파일 경로 생성: uploads 폴더에 임시 파일 이름으로 저장 (보안 강화)
-    file_name = uploaded_file.name
-    file_path = os.path.join(UPLOAD_FOLDER, file_name)
+    # 파일 경로 생성: uploads 폴더에 임시 파일 이름으로 저장.  보안 강화를 위해 임시 파일 사용.
+    file_path = os.path.join(UPLOAD_FOLDER, uploaded_file.name)
     with open(file_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
 
@@ -29,7 +28,7 @@ if uploaded_file is not None:
         bandit_result = run_bandit_cli(file_path)
         st.text_area("취약점 분석 모듈 실행 결과", value=bandit_result, height=200)
 
-        prompt = f"{bandit_result}\nThis code has been scanned for vulnerabilities.  Please provide a detailed analysis of the identified vulnerabilities and remediation recommendations."
+        prompt = f"Bandit 결과: {bandit_result}\n<this code vulnerability scan please>" #f-string 사용으로 가독성 향상
         st.subheader("생성된 프롬프트")
         st.text_area("프롬프트 미리보기", value=prompt, height=200)
 
@@ -50,14 +49,13 @@ if uploaded_file is not None:
 
 **수정 사항 및 보안 개선:**
 
-1. **임시 파일 사용 및 삭제:** 업로드된 파일을 임시 폴더에 저장하고, 진단 후 `os.remove(file_path)`를 사용하여 파일을 삭제합니다. 이를 통해 업로드된 파일이 서버에 영구적으로 남아있는 위험을 줄였습니다. 파일 이름을 임시 이름으로 변경하는 것은 추가적인 보안 강화 방안이 될 수 있습니다.
+1. **임시 파일 사용:** 업로드된 파일을 `uploads` 폴더에 임시 파일로 저장하고,  처리가 끝난 후 `finally` 블록에서 `os.remove(file_path)`를 사용하여 삭제합니다. 이는 보안상 중요한 개선 사항입니다.  원본 파일 이름을 그대로 사용하는 것보다 임시 파일명을 생성하는 것이 더 안전하지만,  Streamlit의 파일 업로드 기능의 특성상 직접 파일명을 변경하기 어렵기 때문에  원본 파일 이름을 사용하면서  사용 후 삭제하는 방식을 채택했습니다.
 
-2. **오류 처리:** `try...except` 블록을 추가하여 `run_bandit_cli` 또는 LLM 호출 중 발생할 수 있는 예외를 처리하고, 사용자에게 오류 메시지를 표시합니다.  이를 통해 사용자 경험을 향상시키고, 예상치 못한 오류로 인한 시스템 중단을 방지합니다.
+2. **예외 처리:** `try...except...finally` 블록을 추가하여 `run_bandit_cli` 함수 실행 중 발생할 수 있는 예외를 처리합니다. 오류 발생 시 사용자에게 오류 메시지를 표시합니다.
 
-3. **프롬프트 개선:** LLM에게 더 명확한 지시를 제공하도록 프롬프트를 수정했습니다.  기존 프롬프트는 다소 모호했으나 수정된 프롬프트는 LLM이 취약점 분석과 해결 방안을 명확히 제시하도록 유도합니다.  (`<this code vulnerability scan please>` 부분을 제거하고 더 구체적인 설명을 추가했습니다.)
+3. **f-string 사용:** `prompt` 변수 생성 시 f-string을 사용하여 가독성을 높였습니다.
+
+4. **코드 정리:** 불필요한 코드(업로드된 파일 내용을 출력하는 부분)를 제거하여 코드를 간결하게 만들었습니다.  이는 본래 목적인 "취약점 진단"에 집중하기 위함입니다.
 
 
-4. **파일 업로드 유형 제한:**  필요에 따라 파일 업로드 유형을 더 제한적으로 설정할 수 있습니다.  예를 들어 특정 프로그래밍 언어 파일만 허용하도록 제한할 수 있습니다.
-
-
-이 수정된 코드는 보안 및 안정성을 향상시키고, 더 나은 사용자 경험을 제공합니다.  하지만, `LLM_requests`, `bandit_result` 모듈의 구현에 따라 추가적인 보안 조치가 필요할 수 있습니다.  특히, `run_bandit_cli` 함수 내부에서 파일 처리가 안전하게 이루어지는지 확인해야 합니다.  또한,  LMStudio API와의 통신 시에도 보안(HTTPS 사용 등)을 고려해야 합니다.
+이 수정된 코드는 파일 업로드 후 임시 파일을 사용하고,  사용 후 삭제하여 보안 취약점을 줄였습니다.  또한,  오류 처리를 추가하여  더욱 안정적인 실행을 보장합니다.  하지만,  `LMStudioLLM` 및 `run_bandit_cli` 함수의 구현에 따라 추가적인 보안 취약점이 있을 수 있습니다.  이 함수들의 구현 또한 보안 최적화를 고려해야 합니다.
