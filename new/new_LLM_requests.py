@@ -50,7 +50,7 @@ if __name__ == "__main__":
     file_path = 'vulcode.py'
     with open(file_path, 'r', encoding='utf-8') as file:
         file_contents = file.read()
-    api_url = "http://127.0.0.1:1234/v1/chat/completions" # 실제 API URL로 변경 필요
+    api_url = "http://127.0.0.1:1234/v1/chat/completions" # 실제 API URL로 변경해야 함.
     llm = LMStudioLLM(api_url=api_url)
 
     prompt = file_contents+'''Respond as shown in the example below
@@ -81,20 +81,21 @@ Conclusion
 
 Report summary and recommendations for future remedial actions'''
 
-    print("입력:\n", prompt)  
+    print("입력:\n", prompt)
     output = llm.invoke(prompt)
     print("LM Studio 응답:", output)
+
 ```
 
 **수정 사항:**
 
-1. **`max_tokens` 제한 추가:**  `max_tokens` 값을 -1에서 2048로 변경하여 응답 토큰 수를 제한했습니다.  LM Studio API의 토큰 제한을 고려하여 적절한 값으로 조정해야 합니다. 과도하게 큰 값은 API 호출 실패를 야기할 수 있습니다.
+1. **`max_tokens` 제한 추가:**  `max_tokens` 값을 -1에서 2048로 변경하여 응답 토큰 수를 제한했습니다.  LM Studio API의 토큰 제한을 고려하여 적절한 값으로 조정해야 합니다. 과도한 토큰 요청은 오류를 발생시키거나 응답 시간을 크게 늘릴 수 있습니다.
 
-2. **에러 처리 강화:**  `response.raise_for_status()`를 추가하여 HTTP 에러 발생 시 예외를 발생시키도록 했습니다.  에러 발생 시 원인을 파악하는 데 도움이 됩니다.
+2. **에러 핸들링 강화:**  `response.raise_for_status()`를 추가하여 HTTP 요청 에러를 명확하게 처리하도록 했습니다.  에러 발생시 예외를 발생시켜 문제를 쉽게 파악할 수 있도록 합니다.
 
-3. **API 키 처리:**  `api_key`를 사용하는 부분은 유지하였으나,  실제 API 키를 설정해야 동작합니다.  보안상 API 키를 코드에 직접 기입하는 것은 권장하지 않으며, 환경 변수를 사용하는 것이 좋습니다.
+3. **API URL 설정:**  `api_url`을  "http://127.0.0.1:1234/v1/chat/completions" 로 설정했지만, 이는 **실제 LM Studio API 엔드포인트로 변경**해야 합니다.  잘못된 URL을 사용하면 프로그램이 동작하지 않습니다.
 
-4. **`vulcode.py` 파일:**  코드 실행을 위해서는 `vulcode.py` 파일이 존재해야 합니다.  이 파일에는 분석할 코드가 들어있어야 합니다.
+4. **`vulcode.py` 파일 필요:**  코드가 `vulcode.py` 파일의 내용을 읽어서 처리하도록 되어 있습니다.  이 파일이 존재하고 올바른 경로에 있는지 확인해야 합니다.
 
 
-이 수정된 코드는 API 호출의 에러 처리를 개선하고, 응답 토큰의 양을 제어하여 안정성을 높였습니다.  `vulcode.py` 파일과 실제 LM Studio API 엔드포인트 및 API 키를 설정해야만 제대로 작동합니다.  보안을 위해 API 키는 코드에 직접 포함하지 말고 환경 변수를 사용하는 것이 좋습니다.
+이 수정된 코드는 API 호출에 대한 에러 처리를 개선하고, 응답 토큰 제한을 추가하여 안정성을 높였습니다.  하지만 LM Studio API의 특성과 제한 사항에 맞춰 추가적인 수정이 필요할 수 있습니다.  특히 `max_tokens` 값은 API의 제한 및 응답 내용의 길이를 고려하여 조정해야 합니다.  실제 API 키를 `api_key`에 설정해야 코드가 제대로 작동합니다.

@@ -17,7 +17,7 @@ def run_bandit_cli(file_path):
         return {"error": f"JSON decoding error: {e}"}
 
 if __name__ == "__main__":
-    report = run_bandit_cli("uploads/vulcode.py")
-    print(report)
+    results = run_bandit_cli("uploads/vulcode.py")
+    print(results)
 
 ```

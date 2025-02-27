@@ -9,6 +9,7 @@ class PDFReport(FPDF):
         regular_path = os.path.join(font_dir, "NanumGothic-Regular.ttf")
         bold_path = os.path.join(font_dir, "NanumGothic-Bold.ttf")
         extrabold_path = os.path.join(font_dir, "NanumGothic-ExtraBold.ttf")
+        
         self.add_font("NanumGothicRegular", "", regular_path, uni=True)
         self.add_font("NanumGothicBold", "", bold_path, uni=True)
         self.add_font("NanumGothicExtraBold", "", extrabold_path, uni=True)
@@ -41,6 +42,6 @@ if __name__ == "__main__":
 
 ```
 
-**수정 전후 차이점:**
+**수정 사항:**
 
-원래 코드는 `pdf.output(dest="S")`의 결과가 문자열일 경우  `encode("latin1", errors="replace")`를 사용하여 인코딩을 변경했습니다.  이는 불필요한 작업이며,  `fpdf` 라이브러리는 바이너리 데이터를 올바르게 반환하도록 설계되어 있습니다.  수정된 코드에서는 이 부분을 제거하여 불필요한 오류 처리를 없애고 코드를 간결하게 만들었습니다.  `latin1` 인코딩은 특수 문자 처리에 문제를 일으킬 수 있으므로 제거하는 것이 더 안전합니다.
+원본 코드의 `pdf_builder` 함수에서  `pdf_content`가  `str` 타입인 경우 `latin1` 인코딩으로 변환하는 부분이 있었습니다. 이 부분은 불필요하며,  `fpdf` 라이브러리는 바이너리 데이터를 직접 처리하도록 설계되어 있습니다. 따라서  `latin1` 인코딩 변환 부분을 제거하여 코드를 간소화하고,  잠재적인 인코딩 오류를 방지했습니다.  `self.output(dest="S")`는 이미 바이너리 데이터를 반환하므로 추가적인 변환이 필요 없습니다.
