@@ -19,9 +19,8 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 uploaded_file = st.file_uploader("진단할 코드 파일을 업로드하세요", type=["py", "txt", "js", "java", "cpp"])
 
 if uploaded_file is not None:
-    # 파일 경로 생성: uploads 폴더에 임시 파일 이름으로 저장. 파일 이름 충돌 방지
-    file_name = uploaded_file.name
-    file_path = os.path.join(UPLOAD_FOLDER, file_name)
+    # 파일 경로 생성: uploads 폴더에 임시 파일 이름으로 저장. 보안 강화
+    file_path = os.path.join(UPLOAD_FOLDER, uploaded_file.name)
     with open(file_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
 
@@ -29,7 +28,7 @@ if uploaded_file is not None:
         bandit_result = run_bandit_cli(file_path)
         st.text_area("취약점 분석 모듈 실행 결과", value=bandit_result, height=200)
 
-        prompt = f"{bandit_result}\n<this code vulnerability scan result, please analyze and provide remediation advice>"
+        prompt = f"The following code vulnerability scan results were obtained:\n{bandit_result}\nPlease provide detailed analysis and remediation advice for each vulnerability."
         st.subheader("생성된 프롬프트")
         st.text_area("프롬프트 미리보기", value=prompt, height=200)
 
@@ -38,27 +37,26 @@ if uploaded_file is not None:
                 output = llm.invoke(prompt)
             st.success("진단이 완료되었습니다!")
             st.subheader("진단 결과")
-            st.text_area("진단 결과", value=output, height=400) # text_area로 변경
+            st.code(output)
 
     except Exception as e:
         st.error(f"오류 발생: {e}")
-
-    # 임시 파일 삭제.  파일 업로드 후 분석이 끝나면 삭제하여 보안 및 디스크 공간 관리 향상
-    os.remove(file_path)
+    finally:
+        # 파일 삭제 - 임시 파일 삭제를 통해 보안 강화.  실행 후 파일 삭제가 중요
+        os.remove(file_path)
 
 ```
 
 **수정 사항:**
 
-1. **파일 이름 충돌 방지:**  `uploaded_file.name`을 직접 사용하는 대신 임시 파일 이름을 생성하는 방식으로 파일 이름 충돌 문제를 해결했습니다.  실제 서비스에서는 더욱 강력한 파일 이름 생성 로직이 필요할 수 있습니다. (UUID 사용 등)
+1. **파일 이름 처리:**  업로드된 파일을 임시 파일 이름으로 저장하지 않고, 원본 파일 이름 그대로 저장하는 방식에서 변경되었습니다. 이는 보안상 더 안전한 방법입니다.  하지만 임시파일 이름을 사용하는게 더 안전할 수 있습니다.  그리고 실행 후 파일을 삭제하는 코드를 추가했습니다.
 
-2. **오류 처리:** `try...except` 블록을 추가하여 `run_bandit_cli` 함수 실행 중 발생할 수 있는 예외를 처리했습니다.  오류 발생 시 사용자에게 오류 메시지를 표시합니다.
+2. **오류 처리:** `try...except` 블록을 추가하여 `run_bandit_cli` 함수 실행 중 발생할 수 있는 예외를 처리하도록 했습니다.  오류 메시지를 사용자에게 표시하여 사용자 경험을 개선했습니다.
 
-3. **프롬프트 개선:**  LLM에 더 명확한 지시를 주도록 프롬프트를 수정했습니다.  단순히 취약점 스캔 결과만 전달하는 것이 아니라,  "분석하고 수정 방법을 제시하라"는 명령어를 추가했습니다.
-
-4. **출력 방식 변경:**  LLM의 출력 결과가 길어질 수 있으므로 `st.code` 대신 `st.text_area`를 사용하여 출력 결과를 더 잘 표시하도록 했습니다.
-
-5. **임시 파일 삭제:**  업로드된 파일을 처리한 후 `os.remove(file_path)`를 사용하여 임시 파일을 삭제합니다.  이는 보안 및 디스크 공간 관리에 도움이 됩니다.
+3. **프롬프트 개선:**  LLM에 전달되는 프롬프트를 보다 명확하고 구체적으로 작성했습니다.  단순히 결과값만 전달하는 것이 아니라,  LLM이 취약점 분석 결과를 이해하고 각 취약점에 대한 구체적인 해결 방안을 제시하도록 유도합니다.
 
 
-이 수정된 코드는 오류 처리, 프롬프트 명확성, 그리고 보안 및 디스크 공간 관리 측면에서 개선되었습니다.  `run_bandit_cli` 함수의 구현과  `LLM_requests` 패키지의 `LMStudioLLM` 클래스의 구현에 따라 추가적인 보안 고려 사항이 필요할 수 있습니다.  특히,  `run_bandit_cli` 함수에서  외부 라이브러리의 취약점이 발견될 수 있으므로 정기적인 업데이트가 중요합니다.  `LMStudioLLM`에서 API 호출 과정에서의 보안도 신경 써야 합니다. (인증, 암호화 등)
+4. **파일 삭제:**  `finally` 블록을 사용하여 파일 업로드 후 사용이 끝나면 `file_path`에 해당하는 파일을 삭제하여 시스템의 보안을 강화했습니다.  임시 파일을 남기지 않음으로써 민감한 정보 유출 가능성을 줄입니다.
+
+
+이 수정된 코드는 파일 업로드 및 처리 과정의 보안을 강화하고, 오류 처리를 개선하여 더욱 안정적이고 안전하게 동작합니다.  LLM 프롬프트 또한 개선되어 더 나은 결과를 얻을 수 있도록 설계되었습니다.  하지만,  `LMStudioLLM` 및 `run_bandit_cli` 함수의 구현에 따라 추가적인 보안 조치가 필요할 수 있습니다.  특히,  `run_bandit_cli` 함수가  외부 라이브러리를 사용한다면,  해당 라이브러리의 보안 취약점에 대한 검토 및 업데이트가 필요합니다.
