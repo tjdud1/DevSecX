@@ -77,14 +77,13 @@ jobs:
         run: npm install
         working-directory: ./front
 
-      - name: Copy LLM Analysis Results
-        run: |
-          pwd
-          cp ./response.json ./front/build/response.json
-
       - name: Build React App
         run: npm run build
         working-directory: ./front
+
+      - name: Copy LLM Analysis Results
+        run: |
+          cp ./response.json ./front/build/response.json
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
