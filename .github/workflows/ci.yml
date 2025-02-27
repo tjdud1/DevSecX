@@ -57,3 +57,94 @@ jobs:
           git push origin main || echo "No changes to push"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write  # ✅ GITHUB_TOKEN에 쓰기 권한 추가 (기본적으로 read-only)
+
+jobs:
+  scan-and-llm:
+    runs-on: ubuntu-latest
+    steps:
+      # 1️⃣ 호출한 리포지토리 체크아웃
+      - name: Checkout Caller Repository
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: true
+
+      # 2️⃣ DevSecX Workflow 실행
+      - name: Run DevSecX Workflow
+        uses: avox-dev/DevSecX_workflow@main
+        env:
+          MY_API_KEY: ${{ secrets.MY_API_KEY }}
+
+      # 3️⃣ 아티팩트 다운로드 (LLM 분석 결과)
+      - name: Download LLM Response
+        uses: actions/download-artifact@v4
+        with:
+          name: llm-response
+          path: ./llm-response
+
+      # 4️⃣ 아티팩트 다운로드 (보안 수정된 소스 코드)
+      - name: Download Fixed Source Code
+        uses: actions/download-artifact@v4
+        with:
+          name: llm-newcode
+          path: ./new
+
+      # 5️⃣ 변경 사항 커밋 & 푸시
+      - name: Commit and Push Changes to Caller Repo
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+          git add response.json
+          git add new/ || echo "No new folder to add"
+          
+          # ✅ 올바르게 입력된 git pull --rebase
+          git pull --rebase origin main || echo "No remote changes to rebase"
+          git commit -m "🔄 Auto-commit: LLM scan results & fixed code" || echo "No changes to commit"
+          git push origin main || echo "No changes to push"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    needs: scan-and-llm  # LLM 작업이 끝난 후 실행
+    steps:
+      # 1️⃣ 리포지토리 체크아웃
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Node.js 설정 (React 앱 빌드에 필요)
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # 3️⃣ 의존성 설치
+      - name: Install Dependencies
+        run: npm install
+
+      # 4️⃣ LLM 분석 결과 파일 복사 (예시로 build 폴더에 넣기)
+      - name: Copy LLM Analysis Results
+        run: cp ./llm-response/response.json ./build/response.json
+
+      # 5️⃣ React 앱 빌드
+      - name: Build React App
+        run: npm run build
+
+      # 6️⃣ GitHub Pages 배포
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build
