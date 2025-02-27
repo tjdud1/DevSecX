@@ -12,12 +12,12 @@ def run_bandit_cli(file_path):
         )
         return json.loads(result.stdout)
     except subprocess.CalledProcessError as e:
-        return json.loads(e.stderr) # stderr 사용
+        return json.loads(e.stderr) if e.stderr else {}
     except json.JSONDecodeError:
-        return {"error": "JSON decoding failed"}
+        return {}
 
 if __name__ == "__main__":
-    result = run_bandit_cli("uploads/vulcode.py")
-    print(result)
+    results = run_bandit_cli("uploads/vulcode.py")
+    print(results)
 
 ```

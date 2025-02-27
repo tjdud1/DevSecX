@@ -17,6 +17,7 @@ def Grok_req(prompt: str) -> str:
         stream=True,
         stop=None,
     )
+    
     result = ""
     for chunk in completion:
         result += chunk.choices[0].delta.content or ""
@@ -25,5 +26,4 @@ def Grok_req(prompt: str) -> str:
 if __name__ == "__main__":
     output = Grok_req("hello")
     print("Generated Response:", output)
-
 ```
