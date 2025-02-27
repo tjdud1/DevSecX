@@ -80,8 +80,7 @@ jobs:
       - name: Copy LLM Analysis Results
         run: |
           pwd
-          ls -l ../
-          cp ../response.json ./front/build/response.json
+          cp ./response.json ./front/build/response.json
 
       - name: Build React App
         run: npm run build
