@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { fetchLLMResults } from "../api/githubApi";
 
+const getIssues = (entry) => {
+  // 'issues' (영어) 또는 '이슈' (한글) key 체크
+  return entry.issues || entry.이슈 || [];
+};
+
 export default function SecurityReport() {
   const [data, setData] = useState([]);
 
@@ -12,26 +17,25 @@ export default function SecurityReport() {
     getData();
   }, []);
 
+  const formatFilePath = (filePath) => {
+    const parts = filePath.split("/DevSecX/");
+    const path = parts.length > 1 ? parts[1] : filePath;
+    const pathParts = path.split("/");
+    return pathParts.slice(-2).join("/");
+  };
+
   if (!data.length) {
     return <p>데이터를 불러오는 중...</p>;
   }
 
-  // 파일 경로 간소화 함수
-  const formatFilePath = (filePath) => {
-    const parts = filePath.split("/DevSecX/");
-    return parts.length > 1 ? `/DevSecX/${parts[1]}` : filePath;
-  };
-
   return (
     <div>
       <h1>🛡️ 보안 취약점 분석 결과</h1>
-
       {data.map((entry, index) => {
-        const issues = entry.issues || [];
+        const issues = getIssues(entry);
 
         return (
           <div key={index} style={{ border: "1px solid black", padding: "1rem", marginBottom: "2rem" }}>
-            {/* ✅ 파일 경로 간소화 반영 */}
             <h2>📁 파일명: {formatFilePath(entry.file)}</h2>
 
             <h3>취약점 목록:</h3>
@@ -39,9 +43,9 @@ export default function SecurityReport() {
               <ul>
                 {issues.map((issue, i) => (
                   <li key={i}>
-                    <p><strong>ID:</strong> {issue.ID || issue.issue || "N/A"}</p>
+                    <p><strong>ID:</strong> {issue.ID || issue.id || "N/A"}</p>
                     <p><strong>심각도:</strong> {issue.심각도 || issue.severity || "N/A"}</p>
-                    <p><strong>신뢰도:</strong> {issue.신뢰도 || issue.confidence || "N/A"}</p>
+                    <p><strong>신뢰도:</strong> {issue.신뢰도 || issue.reliability || "N/A"}</p>
                     <p><strong>위치:</strong> {issue.위치 || issue.location || "N/A"}</p>
                     <p>
                       <strong>CWE:</strong>{" "}
