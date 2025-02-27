@@ -59,33 +59,33 @@ jobs:
 
   build-and-deploy:
     runs-on: ubuntu-latest
-    needs: scan-and-llm  # LLM 작업이 끝난 후 실행
+    needs: scan-and-llm
     steps:
-      # 1️⃣ 리포지토리 체크아웃
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Node.js 설정 (React 앱 빌드에 필요)
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      # 3️⃣ 의존성 설치
+      # 리액트 프로젝트 경로로 이동
+      - name: Change directory to React project
+        run: cd front
+
       - name: Install Dependencies
         run: npm install
+        working-directory: ./front
 
-      # 4️⃣ LLM 분석 결과 파일 복사 (예시로 build 폴더에 넣기)
       - name: Copy LLM Analysis Results
-        run: cp ./llm-response/response.json ./build/response.json
+        run: cp ./llm-response/response.json ./front/build/response.json
 
-      # 5️⃣ React 앱 빌드
       - name: Build React App
         run: npm run build
+        working-directory: ./front
 
-      # 6️⃣ GitHub Pages 배포
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build
+          publish_dir: ./front/build
