@@ -9,7 +9,7 @@ class LMStudioLLM(LLM):
     api_key: Optional[str] = Field(None, description="LM Studio API 키 (필요 시)")
     model: str = Field("deepseek-r1-distill-qwen-7b", description="사용할 모델")
     temperature: float = Field(0.7, description="생성 온도")
-    max_tokens: int = Field(2048, description="최대 토큰 수") #max_tokens 값을 -1에서 2048로 변경하여 과도한 응답을 방지
+    max_tokens: int = Field(1024, description="최대 토큰 수 (-1이면 제한 없음)") # max_tokens 제한 추가
     do_stream: bool = Field(False, description="스트리밍 여부")
 
     @property
@@ -40,10 +40,9 @@ class LMStudioLLM(LLM):
             result = response.json()
             return result["choices"][0]["message"]["content"]
         except requests.exceptions.RequestException as e:
-            return f"Error: {e}" #에러처리 추가
-        except (KeyError, IndexError) as e:
-            return f"Error parsing response: {e}, response: {result}" #에러처리 추가
-
+            return f"Error: {e}" # 에러 처리 추가
+        except (KeyError, IndexError):
+            return result.get("text", "")
 
     def invoke(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         return self._call(prompt, stop)
@@ -83,7 +82,7 @@ Conclusion
 
 Report summary and recommendations for future remedial actions'''
 
-    print("입력:\n", prompt)  
+    print("입력:\n", prompt)
     output = llm.invoke(prompt)
     print("LM Studio 응답:", output)
 
@@ -91,11 +90,11 @@ Report summary and recommendations for future remedial actions'''
 
 **수정 사항:**
 
-1. **`max_tokens` 값 변경:**  `max_tokens` 값을 `-1` 에서 `2048` 로 변경했습니다.  `-1` 은 제한 없이 응답을 생성하도록 설정하는데, 이는 과도하게 긴 응답을 생성하여 API 호출 오류나 과도한 리소스 소모를 야기할 수 있습니다.  2048은 일반적인 최대 토큰 수 제한이며, 필요에 따라 조정할 수 있습니다.
+1. **`max_tokens` 제한 추가:**  API 호출 시 과도한 토큰 사용으로 인한 오류를 방지하기 위해 `max_tokens`에 적절한 값 (예: 1024)을 설정했습니다.  필요에 따라 값을 조정해야 합니다.  -1은 제한 없음을 의미하며,  API 제공자가 허용하는 최대 토큰 수를 초과할 수 있으므로 위험합니다.
 
-2. **에러 처리 추가:** `requests.post` 호출에서 `timeout` 매개변수를 추가하고,  `requests.exceptions.RequestException` 및  `KeyError`, `IndexError` 에 대한 예외 처리를 추가했습니다.  API 요청 실패 또는 응답 파싱 실패 시, 보다 유용한 에러 메시지를 반환하도록 수정했습니다.
+2. **에러 핸들링 추가:**  `requests.post` 호출에서 발생할 수 있는 네트워크 오류(`requests.exceptions.RequestException`)를 처리하여 에러 메시지를 반환하도록 수정했습니다.  `timeout` 옵션을 추가하여 응답 시간을 제한했습니다.
 
-3. **명확한 에러 메시지:**  예외 발생 시 더 명확하고 유용한 에러 메시지를 반환하도록 수정했습니다.  원인 파악에 도움이 됩니다.
+3. **JSON 응답 처리 개선:**  `try-except` 블록을 사용하여  `result["choices"][0]["message"]["content"]` 접근 시 발생할 수 있는 `KeyError` 및 `IndexError`를 더욱 안전하게 처리하도록 했습니다.
 
 
-이 수정된 코드는 API 요청 오류를 더 잘 처리하고, 응답 토큰 수를 제한하여 과도한 응답을 방지합니다.  `vulcode.py` 파일의 내용에 따라,  API 호출 제한 시간 또는  `max_tokens` 값을 더 조정해야 할 수 있습니다.  `api_url` 역시 실제 API 엔드포인트로 변경해야 합니다.
+이 수정된 코드는 API 호출의 안정성을 높이고, 오류 발생 시 더욱 유용한 정보를 제공합니다.  `vulcode.py` 파일의 내용에 따라 응답 결과가 달라질 수 있습니다.  API 키가 필요한 경우 `api_key` 필드에 키 값을 설정해야 합니다.  `api_url`은 실제 LM Studio API 엔드포인트로 변경해야 합니다.

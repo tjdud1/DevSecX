@@ -6,7 +6,7 @@ from bandit_result import run_bandit_cli  # Bandit CLI를 실행하는 함수 (�
 from report import PDFReport
 from Grok_api import Grok_req #  # Grok api 요청 함수 (응답 문자열 반환)
 
-# LMStudio API 엔드포인트 설정
+# LMStudio API 엔드포인트 설정 (필요시 수정)
 api_url = "http://127.0.0.1:1234/v1/chat/completions"
 llm = LMStudioLLM(api_url=api_url)
 pdf_report = PDFReport()
@@ -91,7 +91,26 @@ if st.button("커밋 및 분석 실행"):
 
 **수정 사항:**
 
-코드 자체에는 보안 취약점이 없었습니다.  문제는 사용자가 입력한 코드를 실행하는 부분 (`eval` 사용)에 있었고, 이 부분은 사용자의 코드 분석 결과에 따라  `Grok_req` 또는 `llm.invoke`  결과에서 처리되어야 합니다.  Streamlit 앱 자체는 보안 취약점이 없으므로 수정할 부분이 없습니다.  `eval` 사용에 대한 보안 우려는 LLM 진단 및 보고서 생성 부분에서 다루어져야 합니다.  LLM이  `eval`의 위험성을 지적하고 `ast.literal_eval` 사용을 권장하는 보고서를 생성하도록 프롬프트를 잘 설계하는 것이 중요합니다.
+* 코드 자체에는 보안 취약점이 없었습니다.  문제는 `eval()` 함수의 사용에 있었고, 이는 사용자 입력을 직접 실행하는 위험성을 가지고 있습니다.  따라서, 코드의 기능을 유지하면서 `eval()`을 안전한 함수로 대체하는 것이 필요합니다.  하지만 Streamlit 애플리케이션 자체의 코드에는  `eval()`을 사용하는 부분이 없으므로 수정할 부분이 없습니다.  질문에서 제공된 코드의 `eval()` 사용을 수정하려면 아래와 같이 수정해야 합니다.
+
+**`eval()`을 사용하는 코드의 수정된 버전:**
+
+```python
+import ast
+
+def safe_vulnerable():
+    user_input = input("Enter expression: ")
+    try:
+        result = ast.literal_eval(user_input)
+        print("Result:", result)
+    except (ValueError, SyntaxError):
+        print("Invalid input")
+
+if __name__ == "__main__":
+    safe_vulnerable()
+```
+
+이 수정된 코드는 `ast.literal_eval()`을 사용하여 사용자 입력을 안전하게 평가합니다. `ast.literal_eval()`은 문자열을 Python 리터럴로만 평가하므로 임의의 코드 실행을 방지합니다.  오류 처리를 추가하여 잘못된 입력에 대한 처리도 개선했습니다.  이 부분은  Streamlit 앱의 `code_input` 영역에서 사용자가 입력하는 코드에 적용해야 합니다.  Streamlit 앱 자체는 수정이 필요하지 않습니다.  앱은 사용자가 입력한 코드를 분석하고 보고서를 생성하는 역할만 합니다.
 
 
-만약 `run_bandit_cli` 함수가 `eval` 사용을 감지하여 `bandit_result`에 그 내용을 포함시킨다면, LLM은  `bandit_result`를 통해  `eval` 사용의 문제점을 인지하고, 개선된 코드를 제시할 수 있을 것입니다.  하지만 Streamlit 앱 자체의 코드에는 수정할 부분이 없습니다.  보안 취약점은 사용자가 입력한 코드에 있으며,  LLM과 Bandit의 분석 결과를 통해 수정해야 합니다.
+**중요:**  `Grok_req` 와 `LMStudioLLM`, `run_bandit_cli`, `PDFReport` 함수의 구현 내용을 알 수 없어서 해당 함수들에 대한 수정은 불가능합니다.  이 함수들이 올바르게 동작하고, 필요한 에러 처리를 포함하는지 확인해야 합니다.  특히, `Grok_req`가  LLM 모델과 어떻게 상호 작용하는지에 따라 추가적인 보안 고려 사항이 필요할 수 있습니다.  예를 들어, LLM에 전달하는 데이터에 민감한 정보가 포함되지 않도록 주의해야 합니다.
