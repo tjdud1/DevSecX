@@ -9,7 +9,7 @@ class LMStudioLLM(LLM):
     api_key: Optional[str] = Field(None, description="LM Studio API 키 (필요 시)")
     model: str = Field("deepseek-r1-distill-qwen-7b", description="사용할 모델")
     temperature: float = Field(0.7, description="생성 온도")
-    max_tokens: int = Field(1024, description="최대 토큰 수 (기본값 1024)") # max_tokens 제한 추가
+    max_tokens: int = Field(2048, description="최대 토큰 수") #max_tokens 제한 추가
     do_stream: bool = Field(False, description="스트리밍 여부")
 
     @property
@@ -50,10 +50,10 @@ if __name__ == "__main__":
     file_path = 'vulcode.py'
     with open(file_path, 'r', encoding='utf-8') as file:
         file_contents = file.read()
-    api_url = "http://127.0.0.1:1234/v1/chat/completions"
+    api_url = "http://127.0.0.1:1234/v1/chat/completions" # 실제 API 주소로 변경 필요
     llm = LMStudioLLM(api_url=api_url)
 
-    prompt = file_contents + """Respond as shown in the example below
+    prompt = file_contents + '''Respond as shown in the example below
 
 [Report Writing Template Example]
 
@@ -79,7 +79,7 @@ Specific recommendations for improving the vulnerability (e.g., advise using ast
 Additional security best practices
 Conclusion
 
-Report summary and recommendations for future remedial actions"""
+Report summary and recommendations for future remedial actions'''
 
     print("입력:\n", prompt)
     output = llm.invoke(prompt)
@@ -89,16 +89,9 @@ Report summary and recommendations for future remedial actions"""
 
 **수정 사항:**
 
-1. **`max_tokens` 제한 추가:**  `max_tokens` 값에 기본값 1024를 설정하여 응답 토큰 수를 제한했습니다.  API 호출 시 과도한 토큰 사용으로 인한 오류를 방지합니다.  필요에 따라 값을 조정하십시오.
+1. **`max_tokens` 제한 추가:**  API 호출 시 응답 토큰 수 제한을 추가했습니다.  `max_tokens` 값을 적절히 설정하여 과도한 응답으로 인한 오류를 방지해야 합니다.  2048로 설정했지만,  API 및 사용 모델에 따라 조정해야 합니다.  제한을 두지 않으면 비용이 과다하게 발생하거나 응답이 잘리거나 timeout 오류가 발생할 수 있습니다.
 
-2. **에러 처리 개선:**  `response.raise_for_status()`를 추가하여 HTTP 요청 에러를 명시적으로 처리하도록 개선했습니다.  에러 발생 시 예외를 발생시켜 프로그램이 중단되지 않고 에러를 처리할 수 있게 됩니다.
-
-**기타 고려 사항:**
-
-* **API 키 보안:**  `api_key`는 환경 변수를 사용하거나 더욱 안전한 방법으로 관리하는 것이 좋습니다.  코드에 직접 작성하는 것은 보안상 좋지 않습니다.
-* **에러 처리 강화:**  `try-except` 블록을 더욱 세분화하여 다양한 에러 상황을 처리할 수 있도록 개선할 수 있습니다.  예를 들어, 네트워크 연결 에러를 별도로 처리하는 등의 추가적인 에러 처리 로직이 필요할 수 있습니다.
-* **입력 검증:** 사용자 입력(prompt)에 대한 유효성 검사를 추가하여 악성 입력으로 인한 문제를 예방하는 것이 좋습니다.
-* **응답 검증:** LLM 응답의 유효성을 검증하여 예상치 못한 응답 형식으로 인한 에러를 방지하는 것이 좋습니다.
+2. **에러 처리 강화:**  `response.raise_for_status()`를 통해 HTTP 에러를 명시적으로 처리하도록 했습니다.
 
 
-이 수정된 코드는  `max_tokens` 제한과 더 나은 에러 처리를 제공하여 안정성을 향상시켰습니다.  하지만,  `vulcode.py` 파일의 내용과 LM Studio API의 실제 동작에 따라 추가적인 수정이 필요할 수 있습니다.  `vulcode.py` 파일을 제공해주시면 더욱 정확한 분석 및 수정을 도와드릴 수 있습니다.
+이 외에는 코드의 기능적 변경은 없으며,  `vulcode.py` 파일의 내용과  LM Studio API 엔드포인트를 실제 환경에 맞게 수정해야 합니다.  `api_url`을  실제 API 주소로 변경하고  `vulcode.py` 파일을 생성해야 합니다.  API 키가 필요한 경우 `api_key`를 설정해야 합니다.  `max_tokens` 값은 API의 제한과 응답 크기에 따라 조절해야 합니다.
