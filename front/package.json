@@ -1,6 +1,7 @@
 {
   "name": "my-security-app",
   "version": "0.1.0",
+  "homepage": "https://tjdud1.github.io/DevSecX",
   "private": true,
   "dependencies": {
     "@chakra-ui/react": "^3.8.1",
