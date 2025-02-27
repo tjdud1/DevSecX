@@ -9,7 +9,6 @@ class PDFReport(FPDF):
         regular_path = os.path.join(font_dir, "NanumGothic-Regular.ttf")
         bold_path = os.path.join(font_dir, "NanumGothic-Bold.ttf")
         extrabold_path = os.path.join(font_dir, "NanumGothic-ExtraBold.ttf")
-        
         self.add_font("NanumGothicRegular", "", regular_path, uni=True)
         self.add_font("NanumGothicBold", "", bold_path, uni=True)
         self.add_font("NanumGothicExtraBold", "", extrabold_path, uni=True)
@@ -44,4 +43,4 @@ if __name__ == "__main__":
 
 **수정 전후 차이점:**
 
-원래 코드는 `pdf_content`가 문자열일 경우 `latin1` 인코딩을 사용하여 바이트로 변환하는 과정을 거쳤습니다.  이는 불필요한 작업이며,  `fpdf` 라이브러리는 이미 바이트 스트림을 반환하도록 설계되어 있습니다.  수정된 코드에서는  `self.output(dest="S")`가 바로 바이트 스트림을 반환하므로 불필요한 인코딩 과정을 제거했습니다.  이는  잠재적인 인코딩 오류를 방지하고 코드의 효율성을 높입니다.  보안 취약점 개선이라고 보기는 어렵지만, 코드의 안정성과 효율성을 높였습니다.
+원본 코드는 `pdf.output(dest="S")`의 결과가 문자열일 경우 `encode("latin1", errors="replace")`를 통해 인코딩하는 부분이 있었습니다.  이는 불필요한 작업이며,  `fpdf` 라이브러리는 바이너리 데이터를 직접 반환하도록 설계되어 있으므로,  `encode` 부분을 제거하여 코드를 간소화하고,  잠재적인 인코딩 오류를 방지했습니다.  `latin1` 인코딩은  일부 문자를 제대로 표현하지 못할 수 있기 때문에,  특히 한글과 같은 다국어 지원 환경에서는 문제가 될 수 있습니다.  수정된 코드는 이러한 문제를 해결하여 더 안전하고 효율적인 코드가 되었습니다.

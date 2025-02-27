@@ -12,7 +12,7 @@ def run_bandit_cli(file_path):
         )
         return json.loads(result.stdout)
     except subprocess.CalledProcessError as e:
-        return json.loads(e.stderr) # stderr에서 에러 정보를 가져옴
+        return json.loads(e.stdout)
     except json.JSONDecodeError:
         return {"error": "JSON decoding failed"}
 
