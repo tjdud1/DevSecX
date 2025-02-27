@@ -16,18 +16,24 @@ export default function SecurityReport() {
     return <p>데이터를 불러오는 중...</p>;
   }
 
+  // 파일 경로 간소화 함수
+  const formatFilePath = (filePath) => {
+    const parts = filePath.split("/DevSecX/");
+    return parts.length > 1 ? `/DevSecX/${parts[1]}` : filePath;
+  };
+
   return (
     <div>
       <h1>🛡️ 보안 취약점 분석 결과</h1>
-  
+
       {data.map((entry, index) => {
         const issues = entry.issues || [];
-  
+
         return (
           <div key={index} style={{ border: "1px solid black", padding: "1rem", marginBottom: "2rem" }}>
-            <h2>📁 파일명: {entry.file}</h2>
-            <p><strong>실행 시간:</strong> {entry.run_started}</p>
-  
+            {/* ✅ 파일 경로 간소화 반영 */}
+            <h2>📁 파일명: {formatFilePath(entry.file)}</h2>
+
             <h3>취약점 목록:</h3>
             {issues.length > 0 ? (
               <ul>
@@ -66,6 +72,4 @@ export default function SecurityReport() {
       })}
     </div>
   );
-  
-  
 }
