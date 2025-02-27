@@ -78,7 +78,7 @@ jobs:
         working-directory: ./front
 
       - name: Copy LLM Analysis Results
-        run: cp ./llm-response/response.json ./front/build/response.json
+        run: cp ../response.json ./front/build/response.json
 
       - name: Build React App
         run: npm run build
