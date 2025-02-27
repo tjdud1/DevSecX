@@ -9,7 +9,7 @@ class LMStudioLLM(LLM):
     api_key: Optional[str] = Field(None, description="LM Studio API 키 (필요 시)")
     model: str = Field("deepseek-r1-distill-qwen-7b", description="사용할 모델")
     temperature: float = Field(0.7, description="생성 온도")
-    max_tokens: int = Field(2048, description="최대 토큰 수") #max_tokens 제한 추가
+    max_tokens: int = Field(2048, description="최대 토큰 수") #max_token 제한 추가
     do_stream: bool = Field(False, description="스트리밍 여부")
 
     @property
@@ -34,14 +34,16 @@ class LMStudioLLM(LLM):
         if stop:
             data["stop"] = stop
 
-        response = requests.post(self.api_url, json=data, headers=headers)
-        response.raise_for_status()
-        result = response.json()
-
         try:
+            response = requests.post(self.api_url, json=data, headers=headers, timeout=60) # timeout 추가
+            response.raise_for_status()
+            result = response.json()
             return result["choices"][0]["message"]["content"]
+        except requests.exceptions.RequestException as e:
+            return f"Error communicating with LM Studio: {e}"
         except (KeyError, IndexError):
-            return result.get("text", "")
+            return result.get("text", "No response from LM Studio")
+
 
     def invoke(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         return self._call(prompt, stop)
@@ -50,10 +52,10 @@ if __name__ == "__main__":
     file_path = 'vulcode.py'
     with open(file_path, 'r', encoding='utf-8') as file:
         file_contents = file.read()
-    api_url = "http://127.0.0.1:1234/v1/chat/completions" # 실제 API 주소로 변경 필요
+    api_url = "http://127.0.0.1:1234/v1/chat/completions" # 실제 API 주소로 변경해야 함.
     llm = LMStudioLLM(api_url=api_url)
 
-    prompt = file_contents + '''Respond as shown in the example below
+    prompt = file_contents+'''Respond as shown in the example below
 
 [Report Writing Template Example]
 
@@ -89,9 +91,13 @@ Report summary and recommendations for future remedial actions'''
 
 **수정 사항:**
 
-1. **`max_tokens` 제한 추가:**  API 호출 시 응답 토큰 수 제한을 추가했습니다.  `max_tokens` 값을 적절히 설정하여 과도한 응답으로 인한 오류를 방지해야 합니다.  2048로 설정했지만,  API 및 사용 모델에 따라 조정해야 합니다.  제한을 두지 않으면 비용이 과다하게 발생하거나 응답이 잘리거나 timeout 오류가 발생할 수 있습니다.
+1. **`max_tokens` 제한 추가:**  `max_tokens` 값을 -1에서 2048로 변경하여 응답 토큰 수를 제한했습니다.  API 호출 시 과도한 토큰 생성으로 인한 오류를 방지합니다.  필요에 따라 적절한 값으로 조정해야 합니다.
 
-2. **에러 처리 강화:**  `response.raise_for_status()`를 통해 HTTP 에러를 명시적으로 처리하도록 했습니다.
+2. **`requests` 에러 처리 추가:**  `requests.post` 호출 시 발생할 수 있는 네트워크 오류 (`requests.exceptions.RequestException`)를 처리하여 더 안정적인 코드를 만들었습니다.  오류 발생 시 사용자에게 오류 메시지를 표시합니다.
+
+3. **`timeout` 설정 추가:**  `requests.post`에 `timeout` 매개변수를 추가하여 API 응답을 기다리는 최대 시간을 설정했습니다.  응답이 너무 오래 걸릴 경우 프로그램이 멈추는 것을 방지합니다.  값은 필요에 따라 조정해야 합니다. (60초로 설정)
+
+4. **에러 처리 개선:**  `response.json()` 호출 후 발생할 수 있는 `KeyError` 또는 `IndexError`에 대한 예외 처리를 더욱 명확하게 하였습니다.  API에서 예상치 못한 응답 형식을 받았을 때,  더 유용한 에러 메시지를 제공합니다.
 
 
-이 외에는 코드의 기능적 변경은 없으며,  `vulcode.py` 파일의 내용과  LM Studio API 엔드포인트를 실제 환경에 맞게 수정해야 합니다.  `api_url`을  실제 API 주소로 변경하고  `vulcode.py` 파일을 생성해야 합니다.  API 키가 필요한 경우 `api_key`를 설정해야 합니다.  `max_tokens` 값은 API의 제한과 응답 크기에 따라 조절해야 합니다.
+이 수정된 코드는  API 호출과 관련된 에러 처리를 개선하여 안정성을 높였습니다.  `max_tokens` 제한을 추가하여 과도한 토큰 생성으로 인한 문제를 방지하고,  `timeout` 설정을 통해 응답 지연으로 인한 문제를 해결했습니다.  실제 API 주소를 `api_url` 변수에 설정해야 합니다.  `vulcode.py` 파일은  분석할 코드를 포함하는 파일입니다.  이 파일은  실제 경로로 수정해야 합니다.

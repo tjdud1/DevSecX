@@ -9,6 +9,7 @@ class PDFReport(FPDF):
         regular_path = os.path.join(font_dir, "NanumGothic-Regular.ttf")
         bold_path = os.path.join(font_dir, "NanumGothic-Bold.ttf")
         extrabold_path = os.path.join(font_dir, "NanumGothic-ExtraBold.ttf")
+        
         self.add_font("NanumGothicRegular", "", regular_path, uni=True)
         self.add_font("NanumGothicBold", "", bold_path, uni=True)
         self.add_font("NanumGothicExtraBold", "", extrabold_path, uni=True)
@@ -33,12 +34,14 @@ if __name__ == "__main__":
     pdf = PDFReport(font_dir="fonts")
     llm_output = "여기에 LLM 진단 결과 텍스트가 들어갑니다.\n한글 지원 테스트: 한글 문장이 정상 출력되어야 합니다."
     pdf_bytes = pdf.pdf_builder(llm_output)
+    
     with open("diagnostic_report.pdf", "wb") as f:
         f.write(pdf_bytes)
+    
     print("PDF 보고서가 생성되었습니다: diagnostic_report.pdf")
 
 ```
 
-**수정 전후 차이점:**
+**수정 사항:**
 
-원본 코드는 `pdf.output(dest="S")`의 결과가 문자열일 경우 `latin1` 인코딩을 사용하여 바이트열로 변환하는 과정을 거쳤습니다.  이는 불필요한 작업이며,  `fpdf` 라이브러리는 이미 바이트열을 반환하도록 설계되어 있습니다.  수정된 코드에서는 이러한 불필요한 인코딩 과정을 제거하여 코드를 간결하고 효율적으로 만들었습니다.  `latin1` 인코딩은 특수 문자 처리에 문제를 일으킬 가능성이 있어 제거하는 것이 더 안전합니다.  문자열이 아닌 바이트열을 바로 반환하도록 수정했습니다.
+원 코드는 `pdf_content`가 str일 경우 `latin1` 인코딩을 사용하여 `bytes`로 변환하는 과정을 거쳤습니다.  이는 불필요한 작업이며,  `fpdf` 라이브러리는 이미 `output(dest="S")` 메서드를 통해 바이너리 데이터를 직접 반환하도록 설계되어 있습니다. 따라서,  `latin1` 인코딩 부분을 제거하여 코드를 간소화하고, 불필요한 에러 처리를 방지했습니다.  이는 보안 취약점이라고 보기는 어렵지만, 코드의 효율성과 안정성을 높이는 개선입니다.
